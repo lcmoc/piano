@@ -1,16 +1,20 @@
+// TODO: Calculate notes
+
 const PianoNotes = () => {
+  // all notes are with Octave 4
+
   const AVAILABLE_KEYS = {
-    a: 100,
-    b: 200,
-    c: 300,
-    d: 400,
-    e: 500,
-    f: 600,
-    g: 700,
+    a: 440,
+    b: 493.9,
+    c: 261.6,
+    d: 293.7,
+    e: 329.6,
+    f: 349.2,
+    g: 392,
   };
 
   const createAudio = () => {
-    const context = new AudioContext();
+    const context = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = context.createOscillator();
     oscillator.type = 'sine';
     const gainNode = context.createGain();
@@ -30,6 +34,7 @@ const PianoNotes = () => {
     document.addEventListener('keyup', (event) => {
       if (event.repeat) return;
       const pressedKey = event.key;
+
       isAvailableKey(pressedKey) && stopSound(oscillator);
     });
   };
@@ -45,6 +50,7 @@ const PianoNotes = () => {
   document.addEventListener('keydown', (event) => {
     if (event.repeat) return;
     const pressedKey = event.key;
+
     isAvailableKey(pressedKey) && makeSound(pressedKey);
   });
 };
