@@ -3,16 +3,42 @@ import './styles.css';
 import React from 'react';
 
 const PianoNotes = () => {
-  // TODO: Calculate notes
-  // all notes are with Octave 4
-  const AVAILABLE_KEYS = {
-    a: 440,
-    b: 493.9,
-    c: 261.6,
-    d: 293.7,
-    e: 329.6,
-    f: 349.2,
-    g: 392,
+  const KEY_NOTES = {
+    a: 'A',
+    b: 'B',
+    c: 'C',
+    d: 'D',
+    e: 'E',
+    f: 'F',
+    g: 'G',
+  };
+
+  const OCTAVE_RATIOS = [
+    1, 1.059463094359, 1.122462048309, 1.1892071150027, 1.25992104989487,
+  ];
+  const BASE_FREQUENCY = 440;
+
+  const HALF_STEPS_FROM_A = {
+    C: -9,
+    'C#': -8,
+    D: -7,
+    'D#': -6,
+    E: -5,
+    F: -4,
+    'F#': -3,
+    G: -2,
+    'G#': -1,
+    A: 0,
+    'A#': 1,
+    B: 2,
+  };
+
+  const calculateNoteFrequency = (note, octave) => {
+    const halfSteps = octave - 4 + HALF_STEPS_FROM_A[note];
+    const frequency =
+      BASE_FREQUENCY * Math.pow(2, halfSteps / 12) * OCTAVE_RATIOS[octave];
+
+    return frequency;
   };
 
   const createAudio = () => {
@@ -25,36 +51,44 @@ const PianoNotes = () => {
     return [oscillator, gainNode];
   };
 
-  const stopSound = (event, oscillator, currentNoteElement) => {
-    if (event.repeat) return;
+  const stopSound = (oscillator, currentNoteElement) => {
     currentNoteElement.style.backgroundColor = 'transparent';
     oscillator.stop();
   };
 
   const makeSound = (note) => {
-    const currentFrequency = AVAILABLE_KEYS[note];
     const [oscillator, gainNode] = createAudio();
-    oscillator.frequency.value = currentFrequency;
+    const currentNote =
+      (note.length === 1 && KEY_NOTES[note]) || note.toUpperCase();
+    const char = currentNote.charAt(0);
+    const octave =
+      (currentNote.length === 2 && parseInt(currentNote.charAt(1))) || 0;
+    const frequency = calculateNoteFrequency(char, octave);
+    oscillator.frequency.value = frequency;
 
     oscillator.connect(gainNode);
     oscillator.start();
 
-    const currentNoteElement = document.getElementById(note);
+    const currentNoteElement = document.getElementById(
+      currentNote.toLocaleLowerCase(),
+    );
+
     currentNoteElement.style.backgroundColor = '#313a4c';
 
     document.addEventListener('mouseup', (event) => {
-      stopSound(event, oscillator, currentNoteElement);
+      if (event.repeat) return;
+      stopSound(oscillator, currentNoteElement);
     });
 
     document.addEventListener('keyup', (event) => {
+      if (event.repeat) return;
       const pressedKey = event.key;
-      isAvailableKey(pressedKey) &&
-        stopSound(event, oscillator, currentNoteElement);
+      isAvailableKey(pressedKey) && stopSound(oscillator, currentNoteElement);
     });
   };
 
   const isAvailableKey = (pressedKey) => {
-    return Object.keys(AVAILABLE_KEYS).includes(pressedKey.toLocaleLowerCase());
+    return Object.keys(KEY_NOTES).includes(pressedKey.toLocaleLowerCase());
   };
 
   document.addEventListener('keydown', (event) => {
@@ -66,16 +100,19 @@ const PianoNotes = () => {
 
   return (
     <div className="NoteContainer">
-      {Object.keys(AVAILABLE_KEYS).map((note) => (
-        <button
-          className="Note"
-          key={`note-${note}`}
-          onMouseDown={() => makeSound(note)}
-          id={note}
-        >
-          {note}
-        </button>
-      ))}
+      {Object.values(KEY_NOTES).map((note) => {
+        const currentNote = note.toLowerCase();
+        return (
+          <button
+            className="Note"
+            key={`note-${currentNote}`}
+            onMouseDown={() => makeSound(currentNote)}
+            id={currentNote}
+          >
+            {note}
+          </button>
+        );
+      })}
     </div>
   );
 };
