@@ -5,6 +5,7 @@ import React from 'react';
 const PianoNotes = () => {
   const KEY_NOTES = {
     a: 'A',
+    s: 'A4',
     b: 'B',
     c: 'C',
     d: 'D',
