@@ -1,0 +1,28 @@
+.NoteContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    margin-top: 200px;
+}
+
+.Note {
+    padding: 30px;
+    border: 1px solid #ffffff;
+    color: #ffffff;
+    border-radius: 3px;
+    margin: 25px;
+    width: 20px;
+    height: 100px;
+    text-align: center;
+    font-size: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background-color: transparent;
+}
+
+.Note:hover {
+    border-color: #797777;
+}

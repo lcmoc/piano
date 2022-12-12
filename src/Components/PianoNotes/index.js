@@ -1,8 +1,10 @@
-// TODO: Calculate notes
+import './styles.css';
+
+import React from 'react';
 
 const PianoNotes = () => {
+  // TODO: Calculate notes
   // all notes are with Octave 4
-
   const AVAILABLE_KEYS = {
     a: 440,
     b: 493.9,
@@ -23,6 +25,12 @@ const PianoNotes = () => {
     return [oscillator, gainNode];
   };
 
+  const stopSound = (event, oscillator, currentNoteElement) => {
+    if (event.repeat) return;
+    currentNoteElement.style.backgroundColor = 'transparent';
+    oscillator.stop();
+  };
+
   const makeSound = (note) => {
     const currentFrequency = AVAILABLE_KEYS[note];
     const [oscillator, gainNode] = createAudio();
@@ -31,16 +39,18 @@ const PianoNotes = () => {
     oscillator.connect(gainNode);
     oscillator.start();
 
-    document.addEventListener('keyup', (event) => {
-      if (event.repeat) return;
-      const pressedKey = event.key;
+    const currentNoteElement = document.getElementById(note);
+    currentNoteElement.style.backgroundColor = '#313a4c';
 
-      isAvailableKey(pressedKey) && stopSound(oscillator);
+    document.addEventListener('mouseup', (event) => {
+      stopSound(event, oscillator, currentNoteElement);
     });
-  };
 
-  const stopSound = (oscillator) => {
-    oscillator.stop();
+    document.addEventListener('keyup', (event) => {
+      const pressedKey = event.key;
+      isAvailableKey(pressedKey) &&
+        stopSound(event, oscillator, currentNoteElement);
+    });
   };
 
   const isAvailableKey = (pressedKey) => {
@@ -53,6 +63,21 @@ const PianoNotes = () => {
 
     isAvailableKey(pressedKey) && makeSound(pressedKey);
   });
+
+  return (
+    <div className="NoteContainer">
+      {Object.keys(AVAILABLE_KEYS).map((note) => (
+        <button
+          className="Note"
+          key={`note-${note}`}
+          onMouseDown={() => makeSound(note)}
+          id={note}
+        >
+          {note}
+        </button>
+      ))}
+    </div>
+  );
 };
 
 export default PianoNotes;
