@@ -1,6 +1,6 @@
 import './styles.css';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const KEY_NOTES = {
   a: 'C',
@@ -16,11 +16,16 @@ const KEY_NOTES = {
   t: 'A#',
   v: 'B',
   h: 'C',
+  z: 'C#',
   n: 'D',
+  u: 'D#',
   j: 'E',
   k: 'F',
+  i: 'F#',
   l: 'G',
+  o: 'G#',
   ö: 'A',
+  p: 'A#',
   ä: 'B',
 };
 
@@ -74,22 +79,32 @@ const getOctave = (note) => {
 };
 
 const PianoNotes = () => {
-  const stopSound = (oscillator) => {
+  const [clickedKeys, setClickedKeys] = useState([]);
+
+  const stopSound = (oscillator, note) => {
+    const inUseKeys =
+      (note.length > 1 &&
+        clickedKeys.filter((currentNote) => currentNote !== note)) ||
+      [];
+
+    setClickedKeys([inUseKeys]);
     oscillator.stop();
   };
 
-  const makeSound = (pressedNote) => {
+  const makeSound = (pressedKey) => {
     const [oscillator, gainNode] = createAudio();
-    const note = KEY_NOTES[pressedNote];
+    const note = KEY_NOTES[pressedKey];
     const noteChar = note.charAt(0);
     const octave = getOctave(note);
     oscillator.frequency.value = calculateNoteFrequency(noteChar, octave);
     oscillator.connect(gainNode);
     oscillator.start();
 
+    setClickedKeys([...clickedKeys, pressedKey]);
+
     document.addEventListener('keyup', (event) => {
       if (event.repeat) return;
-      isAvailableKey(event.key) && stopSound(oscillator);
+      isAvailableKey(event.key) && stopSound(oscillator, note);
     });
   };
 
@@ -110,15 +125,16 @@ const PianoNotes = () => {
 
   return (
     <div className="NoteContainer">
-      {Object.values(KEY_NOTES).map((note, index) => {
-        const keyboardKey = Object.keys(KEY_NOTES).find(
-          (key) => KEY_NOTES[key] === note,
-        );
+      {Object.keys(KEY_NOTES).map((key) => {
+        const note = KEY_NOTES[key];
         return (
           <button
             className="Note"
-            key={`note-${note}-keyboardKey-${keyboardKey}-index-${index}`}
-            id={`note-${note}-keyboardKey-${keyboardKey}-index-${index}`}
+            key={`note-${note}-keyboardKey-${key}`}
+            id={`note-${note}-keyboardKey-${key}`}
+            style={{
+              backgroundColor: clickedKeys.includes(key) && '#313a4c',
+            }}
           ></button>
         );
       })}
