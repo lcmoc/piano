@@ -1,12 +1,12 @@
 import './App.css';
 
-import PianoNotes from './Components/PianoNotes';
+import Piano from './Components/Piano';
 import React from 'react';
 
 function App() {
   return (
     <div className="App">
-      <PianoNotes />
+      <Piano />
     </div>
   );
 }
