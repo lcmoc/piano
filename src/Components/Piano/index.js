@@ -57,87 +57,106 @@ const calculateNoteFrequency = (note, octave) => {
   return frequency;
 };
 
-const createAudio = () => {
-  const context = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = context.createOscillator();
-  oscillator.type = 'sine';
-  const gainNode = context.createGain();
-  gainNode.connect(context.destination);
-
-  return [oscillator, gainNode];
-};
+const context = new (window?.AudioContext || window?.webkitAudioContext)();
+const oscillator = context.createOscillator();
+oscillator.type = 'sine';
+const gainNode = context.createGain();
+gainNode.connect(context.destination);
 
 const isAvailableKey = (pressedKey) => {
   return Object.keys(KEY_NOTES).includes(pressedKey.toLocaleLowerCase());
 };
 
-const getOctave = (note) => {
-  const hasOctaveValue = note.length === 2;
-  const octaveNumber = parseInt(note.charAt(1));
-
-  return (hasOctaveValue && octaveNumber) || 0;
-};
-
 const PianoNotes = () => {
-  const [clickedKeys, setClickedKeys] = useState([]);
+  const [clickedKeys, setClickedKeys] = useState();
+  const [octave, setOctave] = useState(0);
 
-  const stopSound = (oscillator, note) => {
+  const stopSound = (note) => {
     const inUseKeys =
       (note.length > 1 &&
         clickedKeys.filter((currentNote) => currentNote !== note)) ||
       [];
-
-    setClickedKeys([inUseKeys]);
-    oscillator.stop();
+    setClickedKeys(inUseKeys);
+    oscillator.disconnect();
   };
 
+  // const OCTAVE_KEYS = ['1', '2'];
+
+  // const controlOctave = (pressedKey) => {
+  //   const minus = pressedKey === '1';
+  //   const plus = pressedKey === '2';
+
+  //   const newOctave = (minus && octave - 1) || (plus && octave + 1) || octave;
+
+  //   setOctave(newOctave);
+  // };
+
   const makeSound = (pressedKey) => {
-    const [oscillator, gainNode] = createAudio();
     const note = KEY_NOTES[pressedKey];
     const noteChar = note.charAt(0);
-    const octave = getOctave(note);
-    oscillator.frequency.value = calculateNoteFrequency(noteChar, octave);
+    const frequency = calculateNoteFrequency(noteChar, octave);
+    oscillator.frequency.value = frequency;
+
+    console.log('frequency', oscillator.frequency.value);
     oscillator.connect(gainNode);
+
+    setClickedKeys(pressedKey);
     oscillator.start();
 
-    setClickedKeys([...clickedKeys, pressedKey]);
-
-    document.addEventListener('keyup', (event) => {
+    window.addEventListener('keyup', (event) => {
       if (event.repeat) return;
       isAvailableKey(event.key) && stopSound(oscillator, note);
     });
   };
 
   useEffect(() => {
+    console.log('eventlistener keydown added');
     window.addEventListener('keydown', (event) => {
       if (event.repeat) return;
       const pressedKey = event.key;
 
-      isAvailableKey(pressedKey) && makeSound(pressedKey);
-      return () => {
-        window.removeEventListener(
-          'keydown',
-          isAvailableKey(pressedKey) && makeSound(pressedKey),
-        );
-      };
+      isAvailableKey(pressedKey) && makeSound(pressedKey.toLowerCase());
     });
-  }, []);
+
+    return () => {
+      window.removeEventListener('keydown', makeSound);
+      console.log('eventlistener keydown removed');
+    };
+  }, [octave]);
 
   return (
-    <div className="NoteContainer">
-      {Object.keys(KEY_NOTES).map((key) => {
-        const note = KEY_NOTES[key];
-        return (
-          <button
-            className="Note"
-            key={`note-${note}-keyboardKey-${key}`}
-            id={`note-${note}-keyboardKey-${key}`}
-            style={{
-              backgroundColor: clickedKeys.includes(key) && '#313a4c',
-            }}
-          ></button>
-        );
-      })}
+    <div className="Container NotePosition">
+      <div className="OctaveContainer">
+        <label htmlFor="octave">Octave</label>
+        <input
+          type="range"
+          name="octave"
+          min="0"
+          max="4"
+          value={octave}
+          onChange={(event) => setOctave(event?.target?.value)}
+        />
+        {octave}
+      </div>
+      <div className="NoteContainer">
+        {Object.keys(KEY_NOTES).map((key) => {
+          const note = KEY_NOTES[key];
+          return (
+            <button
+              className="Note"
+              key={`note-${note}-keyboardKey-${key}`}
+              id={`note-${note}-keyboardKey-${key}`}
+              style={{
+                background: clickedKeys === key && '#526F9B',
+                color: clickedKeys === key && 'white',
+              }}
+            >
+              <p>{note}</p>
+              <p>{key}</p>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };
