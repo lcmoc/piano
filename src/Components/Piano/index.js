@@ -30,8 +30,10 @@ const KEY_NOTES = {
 };
 
 const OCTAVE_RATIOS = [
-  1, 1.059463094359, 1.122462048309, 1.1892071150027, 1.25992104989487,
+  0.6, 0.7, 0.8, 0.9, 1, 1.059463094359, 1.122462048309, 1.1892071150027,
+  1.25992104989487,
 ];
+
 const BASE_FREQUENCY = 440;
 
 const HALF_STEPS_FROM_A = {
@@ -49,94 +51,98 @@ const HALF_STEPS_FROM_A = {
   B: 2,
 };
 
-const calculateNoteFrequency = (note, octave) => {
+const OCTAVE_KEYS = ['1', '2'];
+
+const getFrequency = (note, octave) => {
   const halfSteps = octave - 4 + HALF_STEPS_FROM_A[note];
   const frequency =
-    BASE_FREQUENCY * Math.pow(2, halfSteps / 12) * OCTAVE_RATIOS[octave];
+    BASE_FREQUENCY * Math.pow(2, halfSteps / 12) * OCTAVE_RATIOS[octave + 4];
 
   return frequency;
 };
 
-const context = new (window?.AudioContext || window?.webkitAudioContext)();
-const oscillator = context.createOscillator();
-oscillator.type = 'sine';
-const gainNode = context.createGain();
-gainNode.connect(context.destination);
-
 const isAvailableKey = (pressedKey) => {
-  return Object.keys(KEY_NOTES).includes(pressedKey.toLocaleLowerCase());
+  return Object.keys(KEY_NOTES).includes(pressedKey.toLowerCase());
+};
+
+const context = new (window?.AudioContext || window?.webkitAudioContext)();
+
+const createOscillator = () => {
+  const oscillator = context.createOscillator();
+  oscillator.type = 'sine';
+  return oscillator;
 };
 
 const PianoNotes = () => {
-  const [clickedKeys, setClickedKeys] = useState();
+  const [playingNote, setPlayingNote] = useState();
   const [octave, setOctave] = useState(0);
 
-  const stopSound = (note) => {
-    const inUseKeys =
-      (note.length > 1 &&
-        clickedKeys.filter((currentNote) => currentNote !== note)) ||
-      [];
-    setClickedKeys(inUseKeys);
+  const stopSound = (oscillator, note) => {
+    setPlayingNote(note);
     oscillator.disconnect();
   };
 
-  // const OCTAVE_KEYS = ['1', '2'];
+  const setNewOctave = (pressedKey) => {
+    const minus = pressedKey === '1';
+    const plus = pressedKey === '2';
+    const isMax = octave === 4;
+    const isMin = octave === -4;
 
-  // const controlOctave = (pressedKey) => {
-  //   const minus = pressedKey === '1';
-  //   const plus = pressedKey === '2';
+    const newOctave =
+      (minus && !isMin && octave - 1) || (plus && !isMax && octave + 1) || 0;
 
-  //   const newOctave = (minus && octave - 1) || (plus && octave + 1) || octave;
-
-  //   setOctave(newOctave);
-  // };
+    setOctave(newOctave);
+  };
 
   const makeSound = (pressedKey) => {
     const note = KEY_NOTES[pressedKey];
-    const noteChar = note.charAt(0);
-    const frequency = calculateNoteFrequency(noteChar, octave);
-    oscillator.frequency.value = frequency;
+    const oscillator = createOscillator();
+    oscillator.frequency.value = getFrequency(note, parseInt(octave));
+    oscillator.connect(context.destination);
 
-    console.log('frequency', oscillator.frequency.value);
-    oscillator.connect(gainNode);
-
-    setClickedKeys(pressedKey);
+    setPlayingNote(pressedKey);
     oscillator.start();
 
-    window.addEventListener('keyup', (event) => {
+    const keyUpListener = (event) => {
       if (event.repeat) return;
       isAvailableKey(event.key) && stopSound(oscillator, note);
-    });
+    };
+
+    window.addEventListener('keyup', keyUpListener);
   };
 
   useEffect(() => {
-    console.log('eventlistener keydown added');
-    window.addEventListener('keydown', (event) => {
+    const keyDownListener = (event) => {
       if (event.repeat) return;
       const pressedKey = event.key;
-
       isAvailableKey(pressedKey) && makeSound(pressedKey.toLowerCase());
-    });
+      OCTAVE_KEYS.includes(pressedKey) && setNewOctave(pressedKey);
+    };
+
+    window.addEventListener('keydown', keyDownListener);
 
     return () => {
-      window.removeEventListener('keydown', makeSound);
-      console.log('eventlistener keydown removed');
+      window.removeEventListener('keydown', keyDownListener);
     };
   }, [octave]);
 
   return (
     <div className="Container NotePosition">
+      <h1 className="Title">Electronic Piano</h1>
       <div className="OctaveContainer">
-        <label htmlFor="octave">Octave</label>
-        <input
-          type="range"
-          name="octave"
-          min="0"
-          max="4"
-          value={octave}
-          onChange={(event) => setOctave(event?.target?.value)}
-        />
-        {octave}
+        <div className="MainContainer">
+          <p>Octave Adjustment</p>
+          <input
+            type="range"
+            name="octaves"
+            id="octaves"
+            onChange={(event) => setOctave(event.target.value)}
+            min={-4}
+            max={4}
+            value={octave}
+          />
+          <label htmlFor="octaves">{octave}</label>
+        </div>
       </div>
       <div className="NoteContainer">
         {Object.keys(KEY_NOTES).map((key) => {
@@ -147,8 +153,8 @@ const PianoNotes = () => {
               key={`note-${note}-keyboardKey-${key}`}
               id={`note-${note}-keyboardKey-${key}`}
               style={{
-                background: clickedKeys === key && '#526F9B',
-                color: clickedKeys === key && 'white',
+                background: playingNote === key && '#526F9B',
+                color: playingNote === key && 'white',
               }}
             >
               <p>{note}</p>
