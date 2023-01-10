@@ -37,11 +37,12 @@ const OCTAVE_RATIOS = [
 const BASE_FREQUENCY = 440;
 
 const HALF_STEPS_FROM_A = {
-  C: -9,
-  'C#': -8,
-  D: -7,
-  'D#': -6,
-  E: -5,
+  C: -10,
+  'C#': -9,
+  D: -8,
+  'D#': -7,
+  E: -6,
+  'E#': -5,
   F: -4,
   'F#': -3,
   G: -2,
